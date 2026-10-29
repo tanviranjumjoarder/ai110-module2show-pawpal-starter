@@ -2,15 +2,15 @@
 
 ## 1. System Design
 
+Three core actions: add a pet, schedule a task for a pet, and see today's tasks in time order with a warning if two clash.
+
 **a. Initial design**
 
-- Briefly describe your initial UML design.
-- What classes did you include, and what responsibilities did you assign to each?
+Four classes. `Owner` holds the pets. `Pet` holds its tasks. `Task` is one activity (description, "HH:MM" time, duration, priority, frequency, completed). `Scheduler` reads every task through the owner and sorts, filters and checks conflicts. `Task` and `Pet` are dataclasses to keep them short.
 
 **b. Design changes**
 
-- Did your design change during implementation?
-- If yes, describe at least one change and why you made it.
+The first draft had no date on `Task`. Recurrence needs one: a daily task must be due tomorrow, not just "07:30" again. I added `due_date` and made `mark_complete()` return the next `Task`, and `Scheduler.mark_task_complete()` adds that task to the pet. I also added `Scheduler.build_plan()` so the app can choose tasks when the owner has limited time. The final UML is in `diagrams/uml_final.mmd`.
 
 ---
 
@@ -18,13 +18,11 @@
 
 **a. Constraints and priorities**
 
-- What constraints does your scheduler consider (for example: time, priority, preferences)?
-- How did you decide which constraints mattered most?
+The scheduler considers time of day, priority (high / medium / low), duration, and the free minutes the owner has. Time order is used for display. Priority is used when time is short, because a missed medicine matters more than a missed grooming.
 
 **b. Tradeoffs**
 
-- Describe one tradeoff your scheduler makes.
-- Why is that tradeoff reasonable for this scenario?
+Conflict detection only flags tasks with the same start time. A 30-minute walk at 07:30 and a feeding at 07:45 overlap but are not flagged. This keeps the check simple and easy to test. For a home pet-care list, exact clashes are the common case.
 
 ---
 
@@ -32,13 +30,11 @@
 
 **a. How you used AI**
 
-- How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
-- What kinds of prompts or questions were most helpful?
+I used Claude Code to suggest the class split, draft the Mermaid diagram, write the methods and tests, and run the tests. The most useful prompts named the exact file and the exact behaviour, for example "marking a daily task done must create a task for tomorrow".
 
 **b. Judgment and verification**
 
-- Describe one moment where you did not accept an AI suggestion as-is.
-- How did you evaluate or verify what the AI suggested?
+I did not take every suggestion as-is. I kept plain `sorted()` with a lambda key instead of a more clever one-liner, because it is easier to read and explain. I checked each method by running `main.py` and `pytest`, and I drove the Streamlit app in a headless test to confirm the conflict warning and the mark-done flow work.
 
 ---
 
@@ -46,13 +42,11 @@
 
 **a. What you tested**
 
-- What behaviors did you test?
-- Why were these tests important?
+Sorting, daily and weekly recurrence, conflict detection, filtering, the time-limited plan, and edge cases: a pet with no tasks, completed tasks not conflicting, and a bad time string. These are the behaviours the UI depends on.
 
 **b. Confidence**
 
-- How confident are you that your scheduler works correctly?
-- What edge cases would you test next if you had more time?
+4 out of 5. All 13 tests pass. Next I would test overlapping durations, tasks past midnight, and monthly recurrence.
 
 ---
 
@@ -60,12 +54,12 @@
 
 **a. What went well**
 
-- What part of this project are you most satisfied with?
+Building and checking the backend first made the Streamlit step short, because the UI only calls methods that already worked.
 
 **b. What you would improve**
 
-- If you had another iteration, what would you improve or redesign?
+Detect overlapping durations, add editing and deleting tasks in the UI, and save data between runs.
 
 **c. Key takeaway**
 
-- What is one important thing you learned about designing systems or working with AI on this project?
+AI can write code quickly, but I have to decide what the design is and prove it with tests. The UML gave me something to check the AI's code against.
