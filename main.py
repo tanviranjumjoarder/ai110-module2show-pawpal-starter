@@ -4,6 +4,7 @@ from pawpal_system import Owner, Pet, Scheduler, Task
 
 
 def show(title, pairs):
+    """Print (pet, task) pairs as one aligned line each."""
     print(f"\n{title}")
     for pet, task in pairs:
         mark = "x" if task.completed else " "

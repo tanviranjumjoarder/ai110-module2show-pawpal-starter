@@ -36,6 +36,13 @@ I used Claude Code to suggest the class split, draft the Mermaid diagram, write 
 
 I did not take every suggestion as-is. I kept plain `sorted()` with a lambda key instead of a more clever one-liner, because it is easier to read and explain. I checked each method by running `main.py` and `pytest`, and I drove the Streamlit app in a headless test to confirm the conflict warning and the mark-done flow work.
 
+**c. AI strategy**
+
+- Most effective features: agent mode that edits several files and then runs `main.py` and `pytest` itself, so I saw real output instead of guesses. Asking it to drive the Streamlit app headlessly also caught UI problems I would have missed.
+- A suggestion I changed: the first app version showed "Done" with `st.success` and then called `st.rerun()`, so the message vanished right away. I changed it to save the message in `st.session_state` and show it after the rerun. I also kept conflict detection to exact start times instead of a fuller overlap check, so the logic stays small and testable.
+- Separate sessions: I did the build in one session, phase by phase (design, logic, tests, UI, docs), and then ran a separate review pass with a different model that checked every assignment step. That review found missing items (edit and remove in the UI, the CLI block in the walkthrough, this AI strategy part) and I added them.
+- Being the lead architect: the AI writes fast, but I decide what the classes are, what each one owns, and what "working" means. The UML and the tests are how I hold the AI's code to that.
+
 ---
 
 ## 4. Testing and Verification
@@ -58,7 +65,7 @@ Building and checking the backend first made the Streamlit step short, because t
 
 **b. What you would improve**
 
-Detect overlapping durations, add editing and deleting tasks in the UI, and save data between runs.
+Detect overlapping durations, let the user edit the description and repeat setting too, and save data between runs.
 
 **c. Key takeaway**
 

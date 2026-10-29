@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import date
 
 import streamlit as st
@@ -87,6 +88,33 @@ if pending:
 if "notice" in st.session_state:
     st.success(st.session_state.pop("notice"))
 
+all_pairs = scheduler.sort_by_time()
+if all_pairs:
+    with st.expander("Edit or remove a task"):
+        name = lambda i: f"{all_pairs[i][1].due_date} {all_pairs[i][1].time}  {all_pairs[i][0].name}: {all_pairs[i][1].description}"
+        idx = st.selectbox("Task", range(len(all_pairs)), format_func=name)
+        pet, task = all_pairs[idx]
+        e1, e2, e3 = st.columns(3)
+        new_time = e1.text_input("Time (HH:MM)", value=task.time, key=f"t{idx}")
+        new_minutes = e2.number_input("Minutes", 1, 240, task.duration_minutes, key=f"m{idx}")
+        levels = ["high", "medium", "low"]
+        new_priority = e3.selectbox("Priority", levels, index=levels.index(task.priority), key=f"p{idx}")
+        b1, b2 = st.columns(2)
+        if b1.button("Save changes"):
+            try:
+                edited = replace(task, time=new_time, duration_minutes=int(new_minutes), priority=new_priority)
+            except ValueError as err:
+                st.error(str(err))
+            else:
+                pet.remove_task(task)
+                pet.add_task(edited)
+                st.session_state.notice = "Task updated."
+                st.rerun()
+        if b2.button("Remove task"):
+            pet.remove_task(task)
+            st.session_state.notice = "Task removed."
+            st.rerun()
+
 st.divider()
 st.subheader("Build a plan for the time I have")
 minutes = st.number_input("Free minutes today", min_value=5, max_value=1440, value=60, step=5)
@@ -95,8 +123,11 @@ if st.button("Generate plan"):
     if plan["scheduled"]:
         st.success("Planned, in time order (high priority tasks are picked first):")
         st.table([{"Time": t.time, "Pet": p.name, "Task": t.description,
-                   "Min": t.duration_minutes, "Priority": t.priority}
+                   "Min": t.duration_minutes, "Priority": t.priority,
+                   "Why": f"{t.priority} priority, fits in {int(minutes)} min"}
                   for p, t in plan["scheduled"]])
+        used = sum(t.duration_minutes for _, t in plan["scheduled"])
+        st.caption(f"Uses {used} of {int(minutes)} minutes.")
     else:
         st.info("Nothing due today.")
     for p, t in plan["skipped"]:

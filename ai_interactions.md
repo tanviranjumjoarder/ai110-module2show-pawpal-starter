@@ -6,35 +6,20 @@
 
 ## Agent Workflow (SF7)
 
-> Document your experience using an AI agent (e.g., Cursor Agent, Claude, Copilot) to make multi-step changes autonomously.
+Extra algorithm added: `Scheduler.build_plan(available_minutes)`, which picks today's tasks by priority (high, medium, low, then time) until the free minutes run out and lists the rest as skipped.
 
 **What task did you give the agent?**
 
-<!-- Describe the goal you asked the agent to accomplish -->
+I asked Claude Code (agent mode) to build PawPal+ from my UML: the four classes in `pawpal_system.py`, the `main.py` demo, the pytest suite, and the Streamlit app, and later to check every assignment step and fill any gaps.
 
 **What did the agent do?**
 
-<!-- List the steps the agent took (files edited, commands run, etc.) -->
+- Files edited: `pawpal_system.py`, `main.py`, `tests/test_pawpal.py`, `pytest.ini`, `app.py`, `diagrams/uml_draft.mmd`, `diagrams/uml_final.mmd`, `diagrams/uml.mmd`, `README.md`, `reflection.md`.
+- Commands run: `python main.py`, `python -m pytest`, and a headless Streamlit test (`streamlit.testing.v1.AppTest`) that added pets and tasks, triggered a conflict, marked a task done, edited and removed a task, and generated a plan.
+- It pasted the real CLI and test output into the README.
 
 **What did you have to verify or fix manually?**
 
-<!-- Describe anything the agent got wrong or that required human review -->
-
----
-
-## Prompt Comparison (SF11)
-
-> Compare two different prompts (or two different models) on the same task.
-
-| | Option A | Option B |
-|-|----------|----------|
-| **Model / tool used** | | |
-| **Prompt** | | |
-| **Response summary** | | |
-| **What was useful** | | |
-| **Problems noticed** | | |
-| **Decision** | | |
-
-**Which approach did you use in your final implementation and why?**
-
-<!-- Your conclusion -->
+- The success message vanished after `st.rerun()`; it was moved into `st.session_state` so it shows after the rerun.
+- In the headless test, two tasks with the exact same label confused the task picker. That was a test-tool quirk, so the test was rerun with distinct tasks.
+- I checked that the final UML matches the methods in `pawpal_system.py`, and that every commit is authored by me.
