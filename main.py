@@ -4,12 +4,13 @@ from pawpal_system import Owner, Pet, Scheduler, Task
 
 
 def show(title, pairs):
-    """Print (pet, task) pairs as one aligned line each."""
-    print(f"\n{title}")
+    """Print (pet, task) pairs as one aligned line each, then a blank line."""
+    print(title)
     for pet, task in pairs:
         mark = "x" if task.completed else " "
         print(f"  [{mark}] {task.time}  {pet.name:<6} {task.description:<14} "
               f"{task.duration_minutes:>3} min  {task.priority:<6} {task.frequency}")
+    print()
 
 
 owner = Owner("Jordan")
@@ -28,15 +29,16 @@ scheduler = Scheduler(owner)
 
 show("Today's Schedule (sorted by time)", scheduler.tasks_for_day())
 
-print("\nConflict warnings")
+print("Conflict warnings")
 for warning in scheduler.detect_conflicts():
     print("  WARNING:", warning)
+print()
 
-show("Only Luna's tasks", scheduler.filter_tasks(pet_name="Luna"))
+show("Only Luna's tasks (sorted by time)", scheduler.sort_by_time(scheduler.filter_tasks(pet_name="Luna")))
 
 walk = mochi.tasks[1]
 following = scheduler.mark_task_complete(mochi, walk)
-print(f"\nMarked '{walk.description}' done; next one created for {following.due_date}")
+print(f"Marked '{walk.description}' done; next one created for {following.due_date}\n")
 show("Completed tasks", scheduler.filter_tasks(completed=True))
 
 plan = scheduler.build_plan(available_minutes=60)

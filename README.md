@@ -29,7 +29,6 @@ streamlit run app.py
 Output of `python main.py`:
 
 ```
-
 Today's Schedule (sorted by time)
   [ ] 07:30  Mochi  Morning walk    30 min  high   daily
   [ ] 07:30  Luna   Flea medicine    5 min  high   weekly
@@ -38,13 +37,13 @@ Today's Schedule (sorted by time)
   [ ] 18:30  Mochi  Evening walk    30 min  medium daily
 
 Conflict warnings
-  WARNING: Conflict on 2026-10-28 at 07:30: Mochi: Morning walk, Luna: Flea medicine
+  WARNING: Conflict on 2026-10-29 at 07:30: Mochi: Morning walk, Luna: Flea medicine
 
-Only Luna's tasks
-  [ ] 08:00  Luna   Feeding         10 min  high   daily
+Only Luna's tasks (sorted by time)
   [ ] 07:30  Luna   Flea medicine    5 min  high   weekly
+  [ ] 08:00  Luna   Feeding         10 min  high   daily
 
-Marked 'Morning walk' done; next one created for 2026-10-29
+Marked 'Morning walk' done; next one created for 2026-10-30
 
 Completed tasks
   [x] 07:30  Mochi  Morning walk    30 min  high   daily
@@ -57,6 +56,16 @@ Plan for 60 free minutes (by priority)
 Skipped (not enough time)
   [ ] 13:00  Mochi  Grooming        45 min  low    once
 ```
+
+## Smarter Scheduling
+
+| Feature | Method(s) | Notes |
+|---------|-----------|-------|
+| Task sorting | `Scheduler.sort_by_time` | `sorted()` with a `(due_date, "HH:MM")` key. 24-hour strings sort correctly as text. |
+| Filtering | `Scheduler.filter_tasks`, `Scheduler.tasks_for_day` | By pet name, by done / not done, or today's pending tasks. |
+| Conflict handling | `Scheduler.detect_conflicts` | Groups pending tasks by (date, start time). Returns warning strings, never raises. Exact start-time matches only. |
+| Recurring tasks | `Task.mark_complete`, `Scheduler.mark_task_complete` | Daily adds 1 day, weekly adds 7 days (`timedelta`). The new task is added to the same pet. |
+| Time-limited plan | `Scheduler.build_plan` | Highest priority first; a task that does not fit is skipped. |
 
 ## Testing PawPal+
 
@@ -80,16 +89,6 @@ tests/test_pawpal.py .............                                       [100%]
 
 **Confidence level:** ★★★★☆ (4 / 5). The core behaviours pass, including edge cases. Not covered: tasks that overlap by duration, and tasks that cross midnight.
 
-## Smarter Scheduling
-
-| Feature | Method(s) | Notes |
-|---------|-----------|-------|
-| Task sorting | `Scheduler.sort_by_time` | `sorted()` with a `(due_date, "HH:MM")` key. 24-hour strings sort correctly as text. |
-| Filtering | `Scheduler.filter_tasks`, `Scheduler.tasks_for_day` | By pet name, by done / not done, or today's pending tasks. |
-| Conflict handling | `Scheduler.detect_conflicts` | Groups pending tasks by (date, start time). Returns warning strings, never raises. Exact start-time matches only. |
-| Recurring tasks | `Task.mark_complete`, `Scheduler.mark_task_complete` | Daily adds 1 day, weekly adds 7 days (`timedelta`). The new task is added to the same pet. |
-| Time-limited plan | `Scheduler.build_plan` | Highest priority first; a task that does not fit is skipped. |
-
 ## Demo Walkthrough
 
 1. Open the app with `streamlit run app.py`. Enter the owner name.
@@ -105,7 +104,6 @@ Key Scheduler behaviours shown: tasks sorted by time, conflict warnings (`st.war
 Sample CLI output from `python main.py`:
 
 ```
-
 Today's Schedule (sorted by time)
   [ ] 07:30  Mochi  Morning walk    30 min  high   daily
   [ ] 07:30  Luna   Flea medicine    5 min  high   weekly
@@ -114,13 +112,13 @@ Today's Schedule (sorted by time)
   [ ] 18:30  Mochi  Evening walk    30 min  medium daily
 
 Conflict warnings
-  WARNING: Conflict on 2026-10-28 at 07:30: Mochi: Morning walk, Luna: Flea medicine
+  WARNING: Conflict on 2026-10-29 at 07:30: Mochi: Morning walk, Luna: Flea medicine
 
-Only Luna's tasks
-  [ ] 08:00  Luna   Feeding         10 min  high   daily
+Only Luna's tasks (sorted by time)
   [ ] 07:30  Luna   Flea medicine    5 min  high   weekly
+  [ ] 08:00  Luna   Feeding         10 min  high   daily
 
-Marked 'Morning walk' done; next one created for 2026-10-29
+Marked 'Morning walk' done; next one created for 2026-10-30
 
 Completed tasks
   [x] 07:30  Mochi  Morning walk    30 min  high   daily
@@ -136,7 +134,48 @@ Skipped (not enough time)
 
 ## Design
 
-UML sources: `diagrams/uml_draft.mmd` (Phase 1) and `diagrams/uml_final.mmd` (final, also saved as `diagrams/uml.mmd`). Reflection: `reflection.md`.
+Final UML class diagram (source: `diagrams/uml_final.mmd`, also saved as `diagrams/uml.mmd`; the Phase 1 draft is `diagrams/uml_draft.mmd`). The design changes are explained in `reflection.md`.
+
+```mermaid
+classDiagram
+    class Owner {
+        +str name
+        +List~Pet~ pets
+        +add_pet(pet)
+        +get_pet(name) Pet
+        +all_tasks() List~tuple~
+    }
+    class Pet {
+        +str name
+        +str species
+        +List~Task~ tasks
+        +add_task(task)
+        +remove_task(task)
+    }
+    class Task {
+        +str description
+        +str time
+        +int duration_minutes
+        +str priority
+        +str frequency
+        +date due_date
+        +bool completed
+        +mark_complete() Task
+    }
+    class Scheduler {
+        +Owner owner
+        +sort_by_time(pairs) List
+        +filter_tasks(pet_name, completed) List
+        +tasks_for_day(day) List
+        +detect_conflicts(day) List~str~
+        +mark_task_complete(pet, task) Task
+        +build_plan(available_minutes, day) dict
+    }
+    Owner "1" *-- "many" Pet : has
+    Pet "1" *-- "many" Task : has
+    Scheduler --> Owner : reads tasks from
+    Task ..> Task : mark_complete() returns the next occurrence
+```
 
 ## AI use
 
